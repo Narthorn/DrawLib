@@ -142,10 +142,12 @@ end
 function DrawLib:DrawPath(tPath)
 	local tScreenPoints = {}
 	local vPathOffset = tPath.vOffset or Vector3.New(0,0,0)
+	local fPathAngle
 	
 	if tPath.unit then
 		if tPath.unit:IsValid() then
 			vPathOffset = vPathOffset + Vector3.New(tPath.unit:GetPosition())
+			fPathAngle = tPath.unit:GetHeading()
 		else
 			self:Destroy(tPath)
 			return
@@ -164,6 +166,7 @@ function DrawLib:DrawPath(tPath)
 			end
 		else 
 			vPoint = tVertex.vPos or Vector3.New(0,0,0)
+			if fPathAngle then vPoint = self:Rotate(vPoint, fPathAngle) end
 			vPoint = vPoint + vPathOffset
 			if tVertex.vOffset then vPoint = vPoint + tVertex.vOffset end
 		end
@@ -282,6 +285,14 @@ function DrawLib:SimplifyPath(tPath, fTolerance) -- Ramer-Douglas-Peucker
 	end
 	
 	return tSimplePath
+end
+
+function DrawLib:Rotate(vPoint, fAngle, vAxis)
+	if fAngle == 0 then return vPoint end
+	local vNewPoint = Vector3.New(0,0,0)
+	vNewPoint.x = -sin(fAngle)*vPoint.x - cos(fAngle)*vPoint.z
+	vNewPoint.z = -cos(fAngle)*vPoint.x + sin(fAngle)*vPoint.z
+	return vNewPoint
 end
 
 Apollo.RegisterAddon(DrawLib)
