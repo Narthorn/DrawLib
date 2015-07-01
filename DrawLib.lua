@@ -10,7 +10,6 @@
 DrawLib = {
 	name = "DrawLib",
 	version = {0,0,9},
-	APIVersion = 1,
 
 	tCircle = {},
 	tPaths = {},
@@ -285,4 +284,4 @@ function DrawLib:SimplifyPath(tPath, fTolerance) -- Ramer-Douglas-Peucker
 	return tSimplePath
 end
 
-Apollo.RegisterPackage(DrawLib, DrawLib.name, DrawLib.APIVersion)
+Apollo.RegisterAddon(DrawLib)
