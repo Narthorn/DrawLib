@@ -115,17 +115,19 @@ function DrawLib:OnFrame()
 	for i=#self.tPaths,1,-1 do
 		local tPath = self.tPaths[i]
 		if tPath then
-			if tPath.type == "unit" then
-				if tPath.unit:IsValid() then
-					tPath.wndMark:SetUnit(tPath.unit)
-				else
-					tPath.wndMark:Destroy()
-					table.remove(self.tPaths,i)
-				end
-			elseif tPath.type == "path" then
-				self:DrawPath(tPath)
+			if     tPath.type == "unit" then self:DrawUnit(tPath)
+			elseif tPath.type == "path" then self:DrawPath(tPath)
 			end
 		end
+	end
+end
+
+function DrawLib:DrawUnit(tPath)
+	if tPath.unit:IsValid() then
+		tPath.wndMark:SetUnit(tPath.unit)
+	else
+		tPath.wndMark:Destroy()
+		table.remove(self.tPaths,i)
 	end
 end
 
