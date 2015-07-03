@@ -90,6 +90,12 @@ function DrawLib:Destroy(tPath)
 				tPath.wndMark:Destroy()
 				tPath.wndMark = nil
 			end
+			if tPath.tPixies then
+				self:UpdatePixies(tPath.tPixies, {})
+			end
+			if tPath.tPixiesOutline then
+				self:UpdatePixies(tPath.tPixiesOutline, {})
+			end
 			table.remove(self.tPaths,i)
 		end
 	end
@@ -110,7 +116,6 @@ end
 -- Draw Handlers
 
 function DrawLib:OnFrame()
-	self.wndOverlay:DestroyAllPixies()
 	for i=#self.tPaths,1,-1 do
 		self:DrawPath(self.tPaths[i])
 	end
@@ -152,23 +157,54 @@ function DrawLib:DrawPath(tPath)
 	end
 	
 	if tPath.bClosed then tScreenPoints[#tScreenPoints+1] = tScreenPoints[1] end
-	
-	for i=1,#tScreenPoints-1 do
-		self:DrawLine(tScreenPoints[i], tScreenPoints[i+1], tPath.tStyle)
-	 end
+
+	if tPath.tStyle.bOutline then
+		if not tPath.tPixiesOutline then tPath.tPixiesOutline = {} end
+		self:UpdatePixies(tPath.tPixiesOutline, tScreenPoints, tPath.tStyle, true)
+	end
+
+	if not tPath.tPixies then tPath.tPixies = {} end
+	self:UpdatePixies(tPath.tPixies, tScreenPoints, tPath.tStyle)
 end
 
-function DrawLib:DrawLine(pA, pB, tStyle)
-	local tLine = {bLine = true, loc = { nOffsets = { pA.x, pA.y, pB.x, pB.y } } }
-	if tStyle.bOutline then
-		tLine.fWidth = tStyle.nLineWidth + 2
-		tLine.cr = "black"
-		self.wndOverlay:AddPixie(tLine)
+function DrawLib:UpdatePixies(tPixies, tScreenPoints, tStyle, bOutline)
+	local overlay = self.wndOverlay
+	local length = math.max(#tPixies, #tScreenPoints-1)
+
+	for i=1,length do
+		if not tPixies[i] then tPixies[i] = {} end
+		local tPixie = tPixies[i]
+		local pA = tScreenPoints[i]
+		local pB = tScreenPoints[i+1]
+
+		if pB then
+			if tPixie.pixie then
+				tPixie.pixieConfig.loc.nOffsets = {pA.x, pA.y, pB.x, pB.y}
+				overlay:UpdatePixie(tPixie.pixie, tPixie.pixieConfig)
+			else
+				tConfig = {bLine = true, loc = { nOffsets = {pA.x, pA.y, pB.x, pB.y} } }
+				if bOutline then
+					tConfig.fWidth = tStyle.nLineWidth + 2
+					tConfig.cr = "black"
+				else
+					tConfig.fWidth = tStyle.nLineWidth
+					tConfig.cr = tStyle.crLineColor
+				end
+
+				tPixie.pixieConfig = tConfig
+				tPixie.pixie = overlay:AddPixie(tPixie.pixieConfig)
+			end
+		else
+			if tPixie.pixie then
+				overlay:DestroyPixie(tPixie.pixie)
+			end
+
+			tPixie.pixie = nil
+		end
 	end
-	tLine.fWidth = tStyle.nLineWidth
-	tLine.cr = tStyle.crLineColor
-	self.wndOverlay:AddPixie(tLine)
+
 end
+
 
 function DrawLib:CalcCircleVectors(nSides, fOffset)
 	local tVectors = {}
