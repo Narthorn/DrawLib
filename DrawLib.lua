@@ -71,9 +71,7 @@ function DrawLib:UnitText(unit, text)
 	if unit and unit:IsValid() then
 		local wndMark = Apollo.LoadForm(self.xmlDoc, "unitMark", "FixedHudStratumHigh", self)
 		wndMark:FindChild("Text"):SetText(text)
-		local tPath = { type = "unit", unit = unit, wndMark = wndMark }
-		self.tPaths[#self.tPaths+1] = tPath
-		return tPath
+		return self:Path({{unit = unit, wndMark = wndMark}})
 	else
 		Print("DrawLib: Invalid unit in DrawLib:UnitText()")
 	end
@@ -115,19 +113,9 @@ function DrawLib:OnFrame()
 	for i=#self.tPaths,1,-1 do
 		local tPath = self.tPaths[i]
 		if tPath then
-			if     tPath.type == "unit" then self:DrawUnit(tPath)
-			elseif tPath.type == "path" then self:DrawPath(tPath)
+			if     tPath.type == "path" then self:DrawPath(tPath)
 			end
 		end
-	end
-end
-
-function DrawLib:DrawUnit(tPath)
-	if tPath.unit:IsValid() then
-		tPath.wndMark:SetUnit(tPath.unit)
-	else
-		tPath.wndMark:Destroy()
-		table.remove(self.tPaths,i)
 	end
 end
 
@@ -151,6 +139,7 @@ function DrawLib:DrawPath(tPath)
 		local tVertex = tPath.tVertices[i]
 		if tVertex.unit then
 			if tVertex.unit:IsValid() then
+				if tVertex.wndMark then tVertex.wndMark:SetUnit(tVertex.unit) end
 				vPoint = Vector3.New(tVertex.unit:GetPosition())
 			else
 				self:Destroy(tPath)
