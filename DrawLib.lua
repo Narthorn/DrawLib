@@ -42,7 +42,6 @@ function DrawLib:OnLoad()
 	self.xmlDoc = XmlDoc.CreateFromFile("DrawLib.xml")
 	self.wndOverlay = Apollo.LoadForm(self.xmlDoc, "Overlay", "InWorldHudStratum", self)
 	Apollo.RegisterEventHandler("UnitCreated", "OnUnitCreated", self)
-	Apollo.RegisterEventHandler("NextFrame", "OnFrame", self)
 end
 
 -- API
@@ -78,6 +77,7 @@ function DrawLib:UnitText(unit, text)
 end
 
 function DrawLib:Path(tVertices, tStyle)
+	if #self.tPaths == 0 then Apollo.RegisterEventHandler("NextFrame", "OnFrame", self)	end
 	local tPath = {tVertices = tVertices, tStyle = tStyle or self.tStyle}
 	self.tPaths[#self.tPaths+1] = tPath
 	return tPath
@@ -93,6 +93,7 @@ function DrawLib:Destroy(tPath)
 			table.remove(self.tPaths,i)
 		end
 	end
+	if #self.tPaths == 0 then Apollo.RemoveEventHandler("NextFrame", self) end
 end
 
 --
