@@ -58,9 +58,7 @@ end
 function DrawLib:UnitLine(unitSrc, unitDst, tStyle)
 	if unitSrc and unitSrc:IsValid() then
 		if unitDst and unitDst:IsValid() then
-			local tPath = {type = "unitline", unitSrc = unitSrc, unitDst = unitDst, tStyle = tStyle or self.tStyle}
-			self.tPaths[#self.tPaths+1] = tPath
-			return tPath
+			return self:Path({{unit = unitSrc}, {unit = unitDst}}, tStyle or self.tStyle)
 		else
 		 	Print("DrawLib: Invalid destination unit in DrawLib:UnitLine()")
 		end
@@ -117,15 +115,7 @@ function DrawLib:OnFrame()
 	for i=#self.tPaths,1,-1 do
 		local tPath = self.tPaths[i]
 		if tPath then
-			if tPath.type == "unitline" then
-				if tPath.unitSrc:IsValid() and tPath.unitDst:IsValid() then
-					local pSrc = GameLib.WorldLocToScreenPoint(Vector3.New(tPath.unitSrc:GetPosition()))
-					local pDst = GameLib.WorldLocToScreenPoint(Vector3.New(tPath.unitDst:GetPosition()))
-					self:DrawLine(pSrc, pDst, tPath.tStyle)
-				else
-					table.remove(self.tPaths,i)
-				end
-			elseif tPath.type == "unit" then
+			if tPath.type == "unit" then
 				if tPath.unit:IsValid() then
 					tPath.wndMark:SetUnit(tPath.unit)
 				else
