@@ -49,7 +49,7 @@ end
 
 function DrawLib:TrackUnit(tUnit, tStyle, tPath)
 	if not tPath then -- default path: player to unit line
-		tPath = {type = "path", tVertices = {{unit = GameLib.GetPlayerUnit()}, {}}}
+		tPath = {tVertices = {{unit = GameLib.GetPlayerUnit()}, {}}}
 	end
 	tPath.tStyle = tStyle or self.tStyle
 	self.tTrackedUnits[tUnit] = tPath
@@ -78,7 +78,7 @@ function DrawLib:UnitText(unit, text)
 end
 
 function DrawLib:Path(tVertices, tStyle)
-	local tPath = {type = "path", tVertices = tVertices, tStyle = tStyle or self.tStyle}
+	local tPath = {tVertices = tVertices, tStyle = tStyle or self.tStyle}
 	self.tPaths[#self.tPaths+1] = tPath
 	return tPath
 end
@@ -111,11 +111,7 @@ end
 function DrawLib:OnFrame()
 	self.wndOverlay:DestroyAllPixies()
 	for i=#self.tPaths,1,-1 do
-		local tPath = self.tPaths[i]
-		if tPath then
-			if     tPath.type == "path" then self:DrawPath(tPath)
-			end
-		end
+		self:DrawPath(self.tPaths[i])
 	end
 end
 
