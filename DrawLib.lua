@@ -140,6 +140,9 @@ function DrawLib:DrawPath(tPath)
 end
 
 function DrawLib:UpdateVertices(tVertices, vOffset, fRotation)
+	local fRotate
+	if fRotation then fRotate = self:Rotate(fRotation) end
+
 	for i=1,#tVertices do
 		local vPoint
 		local tVertex = tVertices[i]
@@ -155,7 +158,7 @@ function DrawLib:UpdateVertices(tVertices, vOffset, fRotation)
 		else 
 			vPoint = tVertex.vPos or Vector3.New(0,0,0)
 			if tVertex.vOffset then vPoint = vPoint + tVertex.vOffset end
-			if fRotation then vPoint = self:Rotate(vPoint, fRotation) end
+			if fRotate then vPoint = fRotate(vPoint) end
 			if vOffset then vPoint = vPoint + vOffset end
 		end
 		tVertex.vPoint = vPoint
@@ -300,12 +303,18 @@ function DrawLib:SimplifyPath(tPath, fTolerance) -- Ramer-Douglas-Peucker
 	return tSimplePath
 end
 
-function DrawLib:Rotate(vPoint, fAngle, vAxis)
-	if fAngle == 0 then return vPoint end
-	local vNewPoint = Vector3.New(0,0,0)
-	vNewPoint.x = -sin(fAngle)*vPoint.x - cos(fAngle)*vPoint.z
-	vNewPoint.z = -cos(fAngle)*vPoint.x + sin(fAngle)*vPoint.z
-	return vNewPoint
+function DrawLib:Rotate(fAngle)
+	if fAngle == 0 then return function(vPoint) return vPoint end end
+
+	local angleCos = cos(fAngle)
+	local angleSin = sin(fAngle)
+
+	return function(vPoint)
+		local vNewPoint = Vector3.New(0,0,0)
+		vNewPoint.x = -angleSin*vPoint.x - angleCos*vPoint.z
+		vNewPoint.z = -angleCos*vPoint.x + angleSin*vPoint.z
+		return vNewPoint
+	end
 end
 
 Apollo.RegisterAddon(DrawLib)
