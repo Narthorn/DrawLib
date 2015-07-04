@@ -123,61 +123,77 @@ end
 
 function DrawLib:DrawPath(tPath)
 	local tScreenPoints = {}
-	local vPathOffset = tPath.vOffset or Vector3.New(0,0,0)
-	local fPathAngle
+	local vOffset = tPath.vOffset
+	local fRotation
 	
 	if tPath.unit then
 		if tPath.unit:IsValid() then
-			vPathOffset = vPathOffset + Vector3.New(tPath.unit:GetPosition())
-			fPathAngle = tPath.unit:GetHeading()
+			if vOffset then
+				vOffset = vOffset + Vector3.New(tPath.unit:GetPosition())
+			else
+				vOffset = Vector3.New(tPath.unit:GetPosition())
+			end
+			fRotation = tPath.unit:GetHeading()
 		else
 			self:Destroy(tPath)
 			return
 		end
 	end
-	
-	for i=1,#tPath.tVertices do
-		local vPoint
-		local tVertex = tPath.tVertices[i]
-		if tVertex.unit then
-			if tVertex.unit:IsValid() then
-				if tVertex.wndMark then tVertex.wndMark:SetUnit(tVertex.unit) end
-				vPoint = Vector3.New(tVertex.unit:GetPosition())
-			else
-				self:Destroy(tPath)
-				return
-			end
-		else 
-			vPoint = tVertex.vPos or Vector3.New(0,0,0)
-			if fPathAngle then vPoint = self:Rotate(vPoint, fPathAngle) end
-			vPoint = vPoint + vPathOffset
-			if tVertex.vOffset then vPoint = vPoint + tVertex.vOffset end
-		end
-		tScreenPoints[i] = GameLib.WorldLocToScreenPoint(vPoint)
+
+	local ret = self:UpdateVertices(tPath.tVertices, vOffset, fRotation)
+
+	if not ret then
+		self:Destroy(tPath)
+		return
 	end
-	
-	if tPath.bClosed then tScreenPoints[#tScreenPoints+1] = tScreenPoints[1] end
 
 	if tPath.tStyle.bOutline then
 		if not tPath.tPixiesOutline then tPath.tPixiesOutline = {} end
-		self:UpdatePixies(tPath.tPixiesOutline, tScreenPoints, tPath.tStyle, true)
+		self:UpdatePixies(tPath.tPixiesOutline, tPath.tVertices, tPath.tStyle, true)
 	end
 
 	if not tPath.tPixies then tPath.tPixies = {} end
-	self:UpdatePixies(tPath.tPixies, tScreenPoints, tPath.tStyle)
+	self:UpdatePixies(tPath.tPixies, tPath.tVertices, tPath.tStyle)
 end
 
-function DrawLib:UpdatePixies(tPixies, tScreenPoints, tStyle, bOutline)
+function DrawLib:UpdateVertices(tVertices, vOffset, fRotation)
+	for i=1,#tVertices do
+		local vPoint
+		local tVertex = tVertices[i]
+		local unit = tVertex.unit
+
+		if unit then
+			if unit:IsValid() then
+				if tVertex.wndMark then tVertex.wndMark:SetUnit(unit) end
+				vPoint = Vector3.New(unit:GetPosition())
+			else
+				return false
+			end
+		else 
+			vPoint = tVertex.vPos or Vector3.New(0,0,0)
+			if tVertex.vOffset then vPoint = vPoint + tVertex.vOffset end
+			if fRotation then vPoint = self:Rotate(vPoint, fRotation) end
+			if vOffset then vPoint = vPoint + vOffset end
+		end
+		tVertex.vPoint = vPoint
+		tVertex.tScreenPoint = GameLib.WorldLocToScreenPoint(vPoint)
+	end
+
+	return true
+end
+
+function DrawLib:UpdatePixies(tPixies, tVertices, tStyle, bOutline)
 	local overlay = self.wndOverlay
-	local length = math.max(#tPixies, #tScreenPoints-1)
+	local length = math.max(#tPixies, #tVertices-1)
 
 	for i=1,length do
 		if not tPixies[i] then tPixies[i] = {} end
 		local tPixie = tPixies[i]
-		local pA = tScreenPoints[i]
-		local pB = tScreenPoints[i+1]
 
-		if pB then
+		if tVertices[i] and tVertices[i+1] then
+			local pA = tVertices[i].tScreenPoint
+			local pB = tVertices[i+1].tScreenPoint
+
 			if tPixie.pixie then
 				tPixie.pixieConfig.loc.nOffsets = {pA.x, pA.y, pB.x, pB.y}
 				overlay:UpdatePixie(tPixie.pixie, tPixie.pixieConfig)
