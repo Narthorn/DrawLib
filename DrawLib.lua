@@ -54,6 +54,22 @@ function DrawLib:UnitText(unit, text)
 	end
 end
 
+function DrawLib:UnitCircle(unit, fRadius, nSides, tStyle)
+	nSides = nSides or 10
+
+	-- Cache circle vectors
+	self.tCircle[nSides] = self.tCircle[nSides] or self:CalcCircleVectors(nSides)
+
+	local tVertices = {}
+	for i=1,#self.tCircle[nSides] do tVertices[i] = {vPos = self.tCircle[nSides][i]*fRadius} end
+
+	local tPath = self:Path(tVertices, tStyle)
+	tPath.unit = unit
+	tPath.tStyle.tOutline = false
+
+	return tPath
+end
+
 function DrawLib:Path(tVertices, tStyle)
 	if #self.tPaths == 0 then Apollo.RegisterEventHandler("NextFrame", "OnFrame", DrawLib)	end
 	local tPath = {tVertices = tVertices, tStyle = tStyle or self.tStyle}
@@ -191,7 +207,7 @@ end
 
 function DrawLib:CalcCircleVectors(nSides, fOffset)
 	local tVectors = {}
-	for i=0,nSides-1 do
+	for i=0,nSides do
 		local angle = 2*i*math.pi/nSides + (fOffset or 0)
 		tVectors[i+1] = Vector3.New(-sin(angle), 0, -cos(angle))
 	end
