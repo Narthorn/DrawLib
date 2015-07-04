@@ -10,7 +10,6 @@ DrawLib = {
 	name = "DrawLib",
 	version = {0,0,9},
 
-	tCircle = {},
 	tPaths = {},
 	
 	tStyle = {
@@ -57,11 +56,10 @@ end
 function DrawLib:UnitCircle(unit, fRadius, nSides, tStyle)
 	nSides = nSides or 10
 
-	-- Cache circle vectors
-	self.tCircle[nSides] = self.tCircle[nSides] or self:CalcCircleVectors(nSides)
+	tCircle = self:CalcCircleVectors(nSides)
 
 	local tVertices = {}
-	for i=1,#self.tCircle[nSides] do tVertices[i] = {vPos = self.tCircle[nSides][i]*fRadius} end
+	for i=1,#tCircle do tVertices[i] = {vPos = tCircle[i]*fRadius} end
 
 	local tPath = self:Path(tVertices, tStyle)
 	tPath.unit = unit
@@ -207,6 +205,7 @@ function DrawLib:UpdatePixies(tPixies, tVertices, tStyle, bOutline)
 
 end
 
+-- Helpers
 
 function DrawLib:CalcCircleVectors(nSides, fOffset)
 	local tVectors = {}
@@ -217,22 +216,18 @@ function DrawLib:CalcCircleVectors(nSides, fOffset)
 	return tVectors
 end
 
-function DrawLib:DrawCircle(vPos, fRadius, nSides, tStyle)
-	-- Cache circle vectors
-	self.tCircle[nSides] = self.tCircle[nSides] or self:CalcCircleVectors(nSides)	
-	local tVectors = {}
-	for i=1,#self.tCircle[nSides] do tVectors[i] = vPos + self.tCircle[nSides][i]*fRadius end
-	self:DrawPath({tVectors = tVectors, bClosed = true, tStyle = tStyle})
-end
+function DrawLib:Rotate(fAngle)
+	if fAngle == 0 then return function(vPoint) return vPoint end end
 
-function DrawLib:DrawUnitCircle(unit, fRadius, nSides, tStyle)
-	-- Cache circle vectors
-	self.tCircle[nSides] = self.tCircle[nSides] or self:CalcCircleVectors(nSides)
-	
-	local tPath = {tVertices = {}, unit = unit, bClosed = true, tStyle = tStyle}
+	local angleCos = cos(fAngle)
+	local angleSin = sin(fAngle)
 
-	for i=1,#self.tCircle[nSides] do tPath.tVertices[i] = {vPos = self.tCircle[nSides][i]*fRadius} end 
-	self:DrawPath(tPath)
+	return function(vPoint)
+		local vNewPoint = Vector3.New(0,0,0)
+		vNewPoint.x = -angleSin*vPoint.x - angleCos*vPoint.z
+		vNewPoint.z = -angleCos*vPoint.x + angleSin*vPoint.z
+		return vNewPoint
+	end
 end
 
 -- Leftover stuff
@@ -301,20 +296,6 @@ function DrawLib:SimplifyPath(tPath, fTolerance) -- Ramer-Douglas-Peucker
 	end
 	
 	return tSimplePath
-end
-
-function DrawLib:Rotate(fAngle)
-	if fAngle == 0 then return function(vPoint) return vPoint end end
-
-	local angleCos = cos(fAngle)
-	local angleSin = sin(fAngle)
-
-	return function(vPoint)
-		local vNewPoint = Vector3.New(0,0,0)
-		vNewPoint.x = -angleSin*vPoint.x - angleCos*vPoint.z
-		vNewPoint.z = -angleCos*vPoint.x + angleSin*vPoint.z
-		return vNewPoint
-	end
 end
 
 Apollo.RegisterAddon(DrawLib)
