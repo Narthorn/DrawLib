@@ -4,8 +4,7 @@
 --- Fix WorldLocToScreenPoint outside-of-screen bugging
 --- Allow re-interpolation of curved path with fewer points based on distance to player
 --- Make a proper Path object
----
---- Player unit gets recreated on zone transition, this breaks TrackUnit
+
 
 DrawLib = {
 	name = "DrawLib",
@@ -13,7 +12,6 @@ DrawLib = {
 
 	tCircle = {},
 	tPaths = {},
-	tTrackedUnits = {},
 	
 	tStyle = {
 		nLineWidth = 3,
@@ -25,34 +23,14 @@ DrawLib = {
 local cos = math.cos
 local sin = math.sin
 
-local function deepcopy(orig)
-    if type(orig) ~= 'table' then return orig else
-        local copy = {}
-        for orig_key, orig_value in next, orig, nil do
-            copy[deepcopy(orig_key)] = deepcopy(orig_value)
-        end
-        setmetatable(copy, deepcopy(getmetatable(orig)))
-		return copy
-    end
-end
-
 --
 
 function DrawLib:OnLoad()
 	self.xmlDoc = XmlDoc.CreateFromFile("DrawLib.xml")
 	self.wndOverlay = Apollo.LoadForm(self.xmlDoc, "Overlay", "InWorldHudStratum", self)
-	Apollo.RegisterEventHandler("UnitCreated", "OnUnitCreated", self)
 end
 
 -- API
-
-function DrawLib:TrackUnit(tUnit, tStyle, tPath)
-	if not tPath then -- default path: player to unit line
-		tPath = {tVertices = {{unit = GameLib.GetPlayerUnit()}, {}}}
-	end
-	tPath.tStyle = tStyle or self.tStyle
-	self.tTrackedUnits[tUnit] = tPath
-end
 
 function DrawLib:UnitLine(unitSrc, unitDst, tStyle)
 	if unitSrc and unitSrc:IsValid() then
@@ -100,17 +78,6 @@ function DrawLib:Destroy(tPath)
 		end
 	end
 	if #self.tPaths == 0 then Apollo.RemoveEventHandler("NextFrame", self) end
-end
-
---
-
-function DrawLib:OnUnitCreated(unit)
-	for tUnit, tPath in pairs(self.tTrackedUnits) do
-		if ((not tUnit.strName) or tUnit.strName == unit:GetName()) then -- BUG: what if tUnit is empty or not a table
-			tPath.unit = unit
-			self.tPaths[#self.tPaths+1] = deepcopy(tPath)
-		end
-	end
 end
 
 -- Draw Handlers
