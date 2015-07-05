@@ -119,6 +119,8 @@ function DrawLib:DrawPath(tPath)
 		if tPath.tStyle.bOutline then
 			tPath.tPixiesOutline = tPath.tPixiesOutline or {}
 			self:UpdatePixies(tPath.tPixiesOutline, tPath.tVertices, tPath.tStyle, true)
+		elseif tPath.tPixiesOutline then
+			self:UpdatePixies(tPath.tPixiesOutline, {})
 		end
 		
 		tPath.tPixies = tPath.tPixies or {}
@@ -168,19 +170,20 @@ function DrawLib:UpdatePixies(tPixies, tVertices, tStyle, bOutline)
 			local pA = tVertices[i].tScreenPoint
 			local pB = tVertices[i+1].tScreenPoint
 			
+			local tConfig = tPixie.pixieConfig or {bLine = true, loc = {}}
+			tConfig.loc.nOffsets = {pA.x, pA.y, pB.x, pB.y}
+			
+			if bOutline then
+				tConfig.fWidth = tStyle.nLineWidth + 2
+				tConfig.cr = "black"
+			else
+				tConfig.fWidth = tStyle.nLineWidth
+				tConfig.cr = tStyle.crLineColor
+			end
+			
 			if tPixie.pixie then
-				tPixie.pixieConfig.loc.nOffsets = {pA.x, pA.y, pB.x, pB.y}
 				overlay:UpdatePixie(tPixie.pixie, tPixie.pixieConfig)
 			else
-				local tConfig = {bLine = true, loc = { nOffsets = {pA.x, pA.y, pB.x, pB.y} } }
-				if bOutline then
-					tConfig.fWidth = tStyle.nLineWidth + 2
-					tConfig.cr = "black"
-				else
-					tConfig.fWidth = tStyle.nLineWidth
-					tConfig.cr = tStyle.crLineColor
-				end
-				
 				tPixie.pixieConfig = tConfig
 				tPixie.pixie = overlay:AddPixie(tPixie.pixieConfig)
 			end
