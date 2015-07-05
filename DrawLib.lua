@@ -5,13 +5,10 @@
 --- Allow re-interpolation of curved path with fewer points based on distance to player
 --- Make a proper Path object
 
-
 DrawLib = {
 	name = "DrawLib",
 	version = {0,0,9},
-
 	tPaths = {},
-	
 	tStyle = {
 		nLineWidth = 3,
 		crLineColor = ApolloColor.new(0/255, 160/255,  200/255):ToTable(),
@@ -55,21 +52,22 @@ end
 
 function DrawLib:UnitCircle(unit, fRadius, nSides, tStyle)
 	nSides = nSides or 10
-
-	tCircle = self:CalcCircleVectors(nSides)
-
+	fRadius = fRadius or 5
+	
+	local tCircle = self:CalcCircleVectors(nSides)
+	
 	local tVertices = {}
 	for i=1,#tCircle do tVertices[i] = {vPos = tCircle[i]*fRadius} end
-
+	
 	local tPath = self:Path(tVertices, tStyle)
 	tPath.unit = unit
-	tPath.tStyle.tOutline = false
-
+	tPath.tStyle.bOutline = false
+	
 	return tPath
 end
 
 function DrawLib:Path(tVertices, tStyle)
-	if #self.tPaths == 0 then Apollo.RegisterEventHandler("NextFrame", "OnFrame", DrawLib)	end
+	if #self.tPaths == 0 then Apollo.RegisterEventHandler("NextFrame", "OnFrame", DrawLib) end
 	local tPath = {tVertices = tVertices, tStyle = tStyle or self.tStyle}
 	self.tPaths[#self.tPaths+1] = tPath
 	return tPath
@@ -82,12 +80,8 @@ function DrawLib:Destroy(tPath)
 				tPath.wndMark:Destroy()
 				tPath.wndMark = nil
 			end
-			if tPath.tPixies then
-				self:UpdatePixies(tPath.tPixies, {})
-			end
-			if tPath.tPixiesOutline then
-				self:UpdatePixies(tPath.tPixiesOutline, {})
-			end
+			if tPath.tPixies        then self:UpdatePixies(tPath.tPixies, {})        end
+			if tPath.tPixiesOutline then self:UpdatePixies(tPath.tPixiesOutline, {}) end
 			table.remove(self.tPaths,i)
 		end
 	end
@@ -120,32 +114,28 @@ function DrawLib:DrawPath(tPath)
 			return
 		end
 	end
-
-	local ret = self:UpdateVertices(tPath.tVertices, vOffset, fRotation)
-
-	if not ret then
+	
+	if self:UpdateVertices(tPath.tVertices, vOffset, fRotation) then
+		if tPath.tStyle.bOutline then
+			tPath.tPixiesOutline = tPath.tPixiesOutline or {}
+			self:UpdatePixies(tPath.tPixiesOutline, tPath.tVertices, tPath.tStyle, true)
+		end
+		
+		tPath.tPixies = tPath.tPixies or {}
+		self:UpdatePixies(tPath.tPixies, tPath.tVertices, tPath.tStyle)
+	else
 		self:Destroy(tPath)
-		return
 	end
-
-	if tPath.tStyle.bOutline then
-		if not tPath.tPixiesOutline then tPath.tPixiesOutline = {} end
-		self:UpdatePixies(tPath.tPixiesOutline, tPath.tVertices, tPath.tStyle, true)
-	end
-
-	if not tPath.tPixies then tPath.tPixies = {} end
-	self:UpdatePixies(tPath.tPixies, tPath.tVertices, tPath.tStyle)
 end
 
 function DrawLib:UpdateVertices(tVertices, vOffset, fRotation)
-	local fRotate
-	if fRotation then fRotate = self:Rotate(fRotation) end
-
+	local fRotate = fRotation and self:Rotate(fRotation)
+	
 	for i=1,#tVertices do
 		local vPoint
 		local tVertex = tVertices[i]
 		local unit = tVertex.unit
-
+		
 		if unit then
 			if unit:IsValid() then
 				if tVertex.wndMark then tVertex.wndMark:SetUnit(unit) end
@@ -162,27 +152,27 @@ function DrawLib:UpdateVertices(tVertices, vOffset, fRotation)
 		tVertex.vPoint = vPoint
 		tVertex.tScreenPoint = GameLib.WorldLocToScreenPoint(vPoint)
 	end
-
+	
 	return true
 end
 
 function DrawLib:UpdatePixies(tPixies, tVertices, tStyle, bOutline)
 	local overlay = self.wndOverlay
 	local length = math.max(#tPixies, #tVertices-1)
-
+	
 	for i=1,length do
 		if not tPixies[i] then tPixies[i] = {} end
 		local tPixie = tPixies[i]
-
+		
 		if tVertices[i] and tVertices[i+1] then
 			local pA = tVertices[i].tScreenPoint
 			local pB = tVertices[i+1].tScreenPoint
-
+			
 			if tPixie.pixie then
 				tPixie.pixieConfig.loc.nOffsets = {pA.x, pA.y, pB.x, pB.y}
 				overlay:UpdatePixie(tPixie.pixie, tPixie.pixieConfig)
 			else
-				tConfig = {bLine = true, loc = { nOffsets = {pA.x, pA.y, pB.x, pB.y} } }
+				local tConfig = {bLine = true, loc = { nOffsets = {pA.x, pA.y, pB.x, pB.y} } }
 				if bOutline then
 					tConfig.fWidth = tStyle.nLineWidth + 2
 					tConfig.cr = "black"
@@ -190,19 +180,17 @@ function DrawLib:UpdatePixies(tPixies, tVertices, tStyle, bOutline)
 					tConfig.fWidth = tStyle.nLineWidth
 					tConfig.cr = tStyle.crLineColor
 				end
-
+				
 				tPixie.pixieConfig = tConfig
 				tPixie.pixie = overlay:AddPixie(tPixie.pixieConfig)
 			end
 		else
 			if tPixie.pixie then
 				overlay:DestroyPixie(tPixie.pixie)
+				tPixie.pixie = nil
 			end
-
-			tPixie.pixie = nil
 		end
 	end
-
 end
 
 -- Helpers
@@ -218,10 +206,10 @@ end
 
 function DrawLib:Rotate(fAngle)
 	if fAngle == 0 then return function(vPoint) return vPoint end end
-
+	
 	local angleCos = cos(fAngle)
 	local angleSin = sin(fAngle)
-
+	
 	return function(vPoint)
 		local vNewPoint = Vector3.New(0,0,0)
 		vNewPoint.x = -angleSin*vPoint.x - angleCos*vPoint.z
@@ -259,18 +247,18 @@ function DrawLib:SimplifyPath(tPath, fTolerance) -- Ramer-Douglas-Peucker
 	local tSimplePath = {}
 	local tMarkers = {[1] = true, [#tPath] = true}
 	local index
-
+	
 	local tStack = {#tPath, 1}
 	
 	while #tStack > 0 do
-	
+		
 		local maxDist = 0
-	
+		
 		local first = tStack[#tStack]
 		tStack[#tStack] = nil
 		local last = tStack[#tStack]
 		tStack[#tStack] = nil
-	
+		
 		for i=first+1,last-1 do
 			local SqDist = self:GetSqDistanceToSeg(tPath[i],tPath[first],tPath[last])
 			if SqDist > maxDist then
