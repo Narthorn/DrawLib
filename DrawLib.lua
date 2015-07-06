@@ -9,6 +9,7 @@ DrawLib = {
 	name = "DrawLib",
 	version = {0,0,9},
 	tPaths = {},
+	tCircle = {},
 	tStyle = {
 		nLineWidth = 3,
 		crLineColor = ApolloColor.new(0/255, 160/255,  200/255):ToTable(),
@@ -54,7 +55,8 @@ function DrawLib:UnitCircle(unit, fRadius, nSides, tStyle)
 	nSides = nSides or 10
 	fRadius = fRadius or 5
 	
-	local tCircle = self:CalcCircleVectors(nSides)
+	self.tCircle[nSides] = self.tCircle[nSides] or self:CalcCircleVectors(nSides)
+	local tCircle = self.tCircle[nSides]
 	
 	local tVertices = {}
 	for i=1,#tCircle do tVertices[i] = {vPos = tCircle[i]*fRadius} end
