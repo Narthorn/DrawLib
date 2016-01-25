@@ -63,7 +63,6 @@ function DrawLib:UnitCircle(unit, fRadius, nSides, tStyle)
 	
 	local tPath = self:Path(tVertices, tStyle)
 	tPath.unit = unit
-	tPath.tStyle.bOutline = false
 	
 	return tPath
 end
