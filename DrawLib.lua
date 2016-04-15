@@ -9,16 +9,19 @@ DrawLib = {
 	name = "DrawLib",
 	version = {0,0,9},
 	tPaths = {},
-	tCircle = {},
 	tStyle = {
 		nLineWidth = 3,
 		crLineColor = ApolloColor.new(0/255, 160/255,  200/255):ToTable(),
 		bOutline = true,
 	},
+
+	-- Cached circle vectors
+	tCircle = setmetatable({}, {__index = function(self, nSides)
+		local tVectors = DrawLib:CalcCircleVectors(nSides)
+		self[nSides] = tVectors
+		return tVectors
+	end}),
 }
-
-
---
 
 function DrawLib:OnLoad()
 	self.xmlDoc = XmlDoc.CreateFromFile("DrawLib.xml")
@@ -52,8 +55,7 @@ end
 function DrawLib:UnitCircle(unit, fRadius, nSides, tStyle)
 	nSides = nSides or 10
 	fRadius = fRadius or 5
-	
-	self.tCircle[nSides] = self.tCircle[nSides] or self:CalcCircleVectors(nSides)
+
 	local tCircle = self.tCircle[nSides]
 	
 	local tVertices = {}
