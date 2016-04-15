@@ -17,8 +17,6 @@ DrawLib = {
 	},
 }
 
-local cos = math.cos
-local sin = math.sin
 
 --
 
@@ -203,22 +201,21 @@ function DrawLib:CalcCircleVectors(nSides, fOffset)
 	local tVectors = {}
 	for i=0,nSides do
 		local angle = 2*i*math.pi/nSides + (fOffset or 0)
-		tVectors[i+1] = Vector3.New(-sin(angle), 0, -cos(angle))
+		tVectors[i+1] = Vector3.New(-math.sin(angle), 0, -math.cos(angle))
 	end
 	return tVectors
 end
 
 function DrawLib:Rotate(fAngle)
-	if fAngle == 0 then return function(vPoint) return vPoint end end
-	
-	local angleCos = cos(fAngle)
-	local angleSin = sin(fAngle)
-	
+	local angleCos = math.cos(fAngle)
+	local angleSin = math.sin(fAngle)
+
 	return function(vPoint)
-		local vNewPoint = Vector3.New(0,0,0)
-		vNewPoint.x = -angleSin*vPoint.x - angleCos*vPoint.z
-		vNewPoint.z = -angleCos*vPoint.x + angleSin*vPoint.z
-		return vNewPoint
+		return Vector3.New(
+			angleCos*vPoint.x + angleSin*vPoint.z,
+			0,
+			-angleSin*vPoint.x + angleCos*vPoint.z
+		)
 	end
 end
 
