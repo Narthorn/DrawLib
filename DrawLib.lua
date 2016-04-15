@@ -162,37 +162,63 @@ end
 function DrawLib:UpdatePixies(tPixies, tVertices, tStyle, bOutline)
 	local overlay = self.wndOverlay
 	local length = math.max(#tPixies, #tVertices-1)
-	
+
+	local sc = Apollo.GetDisplaySize() -- maybe move this out for performance
+	local scdiag = (sc.nWidth^2 + sc.nHeight^2)
+
 	for i=1,length do
 		if not tPixies[i] then tPixies[i] = {} end
 		local tPixie = tPixies[i]
-		
+		local bDestroy = false
+
 		if tVertices[i] and tVertices[i+1] then
 			local pA = tVertices[i].tScreenPoint
 			local pB = tVertices[i+1].tScreenPoint
-			
-			local tConfig = tPixie.pixieConfig or {bLine = true, loc = {}}
-			tConfig.loc.nOffsets = {pA.x, pA.y, pB.x, pB.y}
-			
-			if bOutline then
-				tConfig.fWidth = tStyle.nLineWidth + 2
-				tConfig.cr = "black"
+
+			if pA.z < 0 and pB.z < 0 then bDestroy = true -- both points behind camera, nothing to draw
 			else
-				tConfig.fWidth = tStyle.nLineWidth
-				tConfig.cr = tStyle.crLineColor
-			end
-			
-			if tPixie.pixie then
-				overlay:UpdatePixie(tPixie.pixie, tPixie.pixieConfig)
-			else
-				tPixie.pixieConfig = tConfig
-				tPixie.pixie = overlay:AddPixie(tPixie.pixieConfig)
+				if pA.z < 0 and pB.z > 0 then pA,pB = pB,pA end -- swap
+
+				if pB.z < 0 and pA.z > 0 then
+					-- here, pB is the projection of a point behind the camera, where perspective projection breaks down;
+					-- to fix it, instead of drawing a line from pA to pB, we draw a line starting at pA going away from
+					-- the reflection of pB wrt to the center of the screen, and stopping somewhere off-screen.
+					--
+					-- ...don't ask me why it works. I'm no longer exactly sure myself.
+
+					local p = Vector3.New(sc.nWidth-pB.x, sc.nHeight-pB.y, 1)
+					-- to ensure we go off-screen, line length should be at least bigger than the length of screen diagonal,
+					-- but not too much, otherwise artifacts start to appear if pB is too far out
+
+					-- pB = pA + (pA-p)*100
+					pB = pA + (pA-p):NormalFast()*scdiag -- this might be overkill
+				end
+
+				local tConfig = tPixie.pixieConfig or {bLine = true, loc = {}}
+				tConfig.loc.nOffsets = {pA.x, pA.y, pB.x, pB.y}
+
+				if bOutline then
+					tConfig.fWidth = tStyle.nLineWidth + 2
+					tConfig.cr = "black"
+				else
+					tConfig.fWidth = tStyle.nLineWidth
+					tConfig.cr = tStyle.crLineColor
+				end
+
+				if tPixie.pixie then
+					overlay:UpdatePixie(tPixie.pixie, tPixie.pixieConfig)
+				else
+					tPixie.pixieConfig = tConfig
+					tPixie.pixie = overlay:AddPixie(tPixie.pixieConfig)
+				end
 			end
 		else
-			if tPixie.pixie then
-				overlay:DestroyPixie(tPixie.pixie)
-				tPixie.pixie = nil
-			end
+			bDestroy = true
+		end
+
+		if bDestroy and tPixie.pixie then
+			overlay:DestroyPixie(tPixie.pixie)
+			tPixie.pixie = nil
 		end
 	end
 end
