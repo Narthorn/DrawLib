@@ -52,6 +52,15 @@ function DrawLib:UnitText(unit, text)
 	end
 end
 
+function DrawLib:Text(pos, text, style)
+	local wndMark = Apollo.LoadForm(self.xmlDoc, "unitMark", "FixedHudStratumHigh", self)
+	local wndText = wndMark:FindChild("Text")
+	wndText:SetText(text)
+	if style and style.color then wndText:SetColor(style.color) end
+	if style and style.font  then wndText:SetFont(style.font) end
+	return self:Path({{vPos = Vector3.New(pos), wndMark = wndMark}})
+end
+
 function DrawLib:UnitCircle(unit, fRadius, nSides, tStyle)
 	nSides = nSides or 10
 	fRadius = fRadius or 5
@@ -151,6 +160,7 @@ function DrawLib:UpdateVertices(tVertices, vOffset, fRotation)
 			if tVertex.vOffset then vPoint = vPoint + tVertex.vOffset end
 			if fRotate then vPoint = fRotate(vPoint) end
 			if vOffset then vPoint = vPoint + vOffset end
+			if tVertex.wndMark then tVertex.wndMark:SetWorldLocation(vPoint) end
 		end
 		tVertex.vPoint = vPoint
 		tVertex.tScreenPoint = GameLib.WorldLocToScreenPoint(vPoint)
