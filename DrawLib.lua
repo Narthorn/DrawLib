@@ -69,7 +69,7 @@ end
 
 function DrawLib:Path(tVertices, tStyle)
 	if #self.tPaths == 0 then Apollo.RegisterEventHandler("NextFrame", "OnFrame", DrawLib) end
-	local tPath = {tVertices = tVertices, tStyle = tStyle or self.tStyle}
+	local tPath = {tVertices = tVertices, tStyle = setmetatable(tStyle or {}, {__index = self.tStyle})}
 	self.tPaths[#self.tPaths+1] = tPath
 	return tPath
 end
