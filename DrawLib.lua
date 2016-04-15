@@ -109,7 +109,7 @@ function DrawLib:DrawPath(tPath)
 			else
 				vOffset = Vector3.New(tPath.unit:GetPosition())
 			end
-			fRotation = tPath.unit:GetHeading()
+			fRotation = math.pi + tPath.unit:GetHeading()
 		else
 			self:Destroy(tPath)
 			return
