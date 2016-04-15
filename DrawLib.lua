@@ -86,10 +86,13 @@ end
 function DrawLib:Destroy(tPath)
 	for i=#self.tPaths,1,-1 do
 		if self.tPaths[i] == tPath then
-			if tPath.wndMark then 
-				tPath.wndMark:Destroy()
-				tPath.wndMark = nil
+			for _,tVertex in pairs(tPath.tVertices) do
+				if tVertex.wndMark then
+					tVertex.wndMark:Destroy()
+					tVertex.wndMark = nil
+				end
 			end
+
 			if tPath.tPixies        then self:UpdatePixies(tPath.tPixies, {})        end
 			if tPath.tPixiesOutline then self:UpdatePixies(tPath.tPixiesOutline, {}) end
 			table.remove(self.tPaths,i)
