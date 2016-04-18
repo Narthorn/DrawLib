@@ -61,6 +61,25 @@ function DrawLib:Text(pos, text, style)
 	return self:Path({{vPos = Vector3.New(pos), wndMark = wndMark}})
 end
 
+-- yep lets just go with yet another calling convention because I am a piece of shit
+function DrawLib:Circle(args) -- target, nSides, nRadius, tStyle
+	if args.target == nil then return end
+
+	local nSides = args.nSides or 10
+	local nRadius = args.nRadius or 5
+
+	local tCircle = self.tCircle[nSides]
+	local tVertices = {}
+	for i=1,#tCircle do tVertices[i] = {vPos = tCircle[i]*nRadius} end
+
+	local tPath = self:Path(tVertices, args.tStyle)
+	if Unit.is(args.target) then tPath.unit = args.target end
+	if Vector3.Is(args.target) then tPath.vOffset = args.target end
+	if type(args.target) == "table" then tPath.vOffset = Vector3.New(args.target) end
+
+	return tPath
+end
+
 function DrawLib:UnitCircle(unit, fRadius, nSides, tStyle)
 	nSides = nSides or 10
 	fRadius = fRadius or 5
